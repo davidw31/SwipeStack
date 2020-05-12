@@ -27,6 +27,7 @@ class SwipeStack extends StatefulWidget {
   final Duration animationDuration;
   final int historyCount;
   final void Function(int, SwiperPosition) onSwipe;
+  final void Function(int, SwiperPosition) onStar;
   final void Function(int, SwiperPosition) onRewind;
   final void Function() onEnd;
   final EdgeInsetsGeometry padding;
@@ -45,6 +46,7 @@ class SwipeStack extends StatefulWidget {
     this.historyCount = 1,
     this.onEnd,
     this.onSwipe,
+    this.onStar,
     this.onRewind,
     this.padding = const EdgeInsets.symmetric(vertical: 20, horizontal: 25)
   }) : 
@@ -87,7 +89,7 @@ class SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateMi
   bool _isLeft = false;
 
   int _animationType = 0;
-  // 0 None, 1 move, 2 manuel, 3 rewind
+  // 0 None, 1 move, 2 manuel, 3 rewind, 4 star
 
   BoxConstraints _baseContainerConstraints;
 
@@ -145,12 +147,16 @@ class SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateMi
         if (_animationType != 0 && _animationType != 3) {
           widget.children.removeAt(widget.children.length-1);
 
-          if (widget.onSwipe != null)
+          if (widget.onSwipe != null && _animationType != 4){
             widget.onSwipe(widget.children.length, _currentItemPosition);
+          }
+
+          if (widget.onStar != null && _animationType == 4) {
+            widget.onStar(widget.children.length, _currentItemPosition);
+          }
 
           if (widget.children.length == 0 && widget.onEnd != null)
             widget.onEnd();
-
         }
 
         _left = 0;
@@ -302,6 +308,17 @@ class SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateMi
   void swipeRight() {
     if (widget.children.length > 0 && _animationController.status != AnimationStatus.forward) {
       _animationType = 2;
+      _animationX = Tween<double>(begin: 0, end: _baseContainerConstraints.maxWidth).animate(_animationController);
+      _animationY = Tween<double>(begin: 0, end: (_baseContainerConstraints.maxHeight / 2) * -1).animate(_animationController);
+      if (widget.maxAngle > 0)
+        _animationAngle = Tween<double>(begin: 0, end: (_maxAngle * 0.7) * -1).animate(_animationController);
+      _animationController.forward();
+    }
+  }
+
+  void star() {
+    if (widget.children.length > 0 && _animationController.status != AnimationStatus.forward) {
+      _animationType = 4;
       _animationX = Tween<double>(begin: 0, end: _baseContainerConstraints.maxWidth).animate(_animationController);
       _animationY = Tween<double>(begin: 0, end: (_baseContainerConstraints.maxHeight / 2) * -1).animate(_animationController);
       if (widget.maxAngle > 0)
